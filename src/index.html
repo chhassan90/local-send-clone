@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>LocalSend Clone</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
+    <div class="flex h-screen w-screen app-bg text-white">
+      <!-- Sidebar -->
+      <div class="sidebar-bg w-64 h-full flex flex-col">
+        <!-- Logo -->
+        <div class="px-8 py-6">
+          <h1 class="text-3xl font-bold">LocalSend</h1>
+        </div>
+
+        <!-- Navigation Menu -->
+        <div class="flex flex-col flex-grow">
+          <div
+            id="receive-btn"
+            class="menu-item flex items-center px-8 py-4 cursor-pointer"
+          >
+            <div
+              class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-700 mr-3"
+            >
+              <svg
+                class="w-5 h-5 teal-icon"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M1.5 8.67v8.58a3 3 0 003 3h15a3 3 0 003-3V8.67l-8.928 5.493a3 3 0 01-3.144 0L1.5 8.67z"
+                />
+                <path
+                  d="M22.5 6.908V6.75a3 3 0 00-3-3h-15a3 3 0 00-3 3v.158l9.714 5.978a1.5 1.5 0 001.572 0L22.5 6.908z"
+                />
+              </svg>
+            </div>
+            <span>Receive</span>
+          </div>
+
+          <div
+            id="send-btn"
+            class="menu-item flex items-center px-8 py-4 cursor-pointer active"
+          >
+            <div
+              class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-700 mr-3"
+            >
+              <svg
+                class="w-5 h-5 teal-icon"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"
+                />
+              </svg>
+            </div>
+            <span>Send</span>
+          </div>
+
+          <div
+            id="settings-btn"
+            class="menu-item flex items-center px-8 py-4 cursor-pointer"
+          >
+            <div
+              class="w-8 h-8 flex items-center justify-center rounded-full bg-gray-700 mr-3"
+            >
+              <svg
+                class="w-5 h-5 teal-icon"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M17.004 10.407c.138.435-.216.842-.672.842h-3.465a.75.75 0 01-.65-.375l-1.732-3c-.229-.396-.053-.907.393-1.004a5.252 5.252 0 016.126 3.537zM8.12 8.464c.307-.338.838-.235 1.066.16l1.732 3a.75.75 0 010 .75l-1.732 3.001c-.229.396-.76.498-1.067.16A5.231 5.231 0 016.75 12c0-1.362.519-2.603 1.37-3.536zM10.878 17.13c-.447-.097-.623-.608-.394-1.003l1.733-3.003a.75.75 0 01.65-.375h3.465c.457 0 .81.408.672.843a5.252 5.252 0 01-6.126 3.538z"
+                />
+              </svg>
+            </div>
+            <span>Settings</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex-grow">
+        <!-- Receive Screen -->
+        <div
+          id="receive-screen"
+          class="screen flex flex-col items-center justify-center h-full"
+        >
+          <!-- Device Identity Circle -->
+          <div class="flex flex-col items-center">
+            <div
+              class="w-32 h-32 rounded-full circle-icon flex items-center justify-center p-1"
+            >
+              <div class="w-24 h-24 circle-inner rounded-full"></div>
+            </div>
+
+            <h2 id="device-name" class="text-4xl mt-8 font-semibold">
+              Loading...
+            </h2>
+            <p id="device-id" class="text-gray-400 mt-1"></p>
+
+            <button
+              id="change-name-btn"
+              class="mt-4 px-4 py-2 rounded-lg bg-teal-600 text-white"
+            >
+              Change Name
+            </button>
+
+            <p class="text-gray-400 mt-12">
+              Your device is discoverable on the local network
+            </p>
+          </div>
+        </div>
+
+        <!-- Send Screen - Updated to match the screenshot -->
+        <div id="send-screen" class="screen active h-full">
+          <div class="p-8 h-full flex flex-col">
+            <h2 class="text-3xl font-semibold mb-6">Selection</h2>
+
+            <!-- Selection Options -->
+            <div class="">
+              <div
+                id="selected-items-container"
+                class="bg-[#222a32] relative rounded-lg mb-3 hidden flex-col gap-2 p-2"
+              ></div>
+              <div>
+                <div
+                  id="file-select-buttons"
+                  class="flex mb-8 items-start gap-2"
+                >
+                  <button
+                    id="file-select-btn"
+                    class="selection-btn py- flex cursor-pointer flex-col items-center justify-center rounded-lg bg-gray-700 px-6 py-2"
+                  >
+                    <svg
+                      class="mb-1 h-8 w-8 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      ></path>
+                    </svg>
+                    <span>File</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Nearby Devices Section -->
+            <div class="mb-4 flex items-center">
+              <h3 class="text-xl mr-4">Nearby devices</h3>
+
+              <!-- Action Icons -->
+              <div class="flex space-x-2">
+                <div
+                  class="icon-btn w-8 h-8 rounded-full flex items-center justify-center"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    ></path>
+                  </svg>
+                </div>
+                <div
+                  class="icon-btn w-8 h-8 rounded-full flex items-center justify-center"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    ></path>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Devices Display Area -->
+            <div class="devices-area flex-grow p-6">
+              <div id="device-list">
+                <!-- Discovered devices will be added here by JavaScript -->
+                <div class="p-4 text-center">
+                  <p class="text-gray-400">
+                    No devices found. Click scan to discover devices.
+                  </p>
+                  <button
+                    id="scan-devices-btn"
+                    class="mt-2 px-4 py-2 rounded-lg bg-teal-600 text-white"
+                  >
+                    Scan for Devices
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="screen h-full">
+          <div class="p-8 h-full">
+            <h2 class="text-3xl font-semibold mb-6">Settings</h2>
+
+            <div class="space-y-8">
+              <!-- Device Section -->
+              <div>
+                <h3 class="text-xl mb-4">Device</h3>
+
+                <div class="bg-gray-800 rounded-lg p-4 space-y-4">
+                  <div class="flex justify-between items-center">
+                    <span>Device Name</span>
+                    <div class="flex items-center">
+                      <input
+                        id="device-name-input"
+                        type="text"
+                        class="bg-gray-700 text-white p-2 rounded mr-2"
+                      />
+                      <button
+                        id="save-name-btn"
+                        class="bg-teal-600 text-white p-2 rounded"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Receiving Section -->
+              <div>
+                <h3 class="text-xl mb-4">Receiving</h3>
+
+                <div class="bg-gray-800 rounded-lg p-4 space-y-4">
+                  <div class="flex justify-between items-center">
+                    <span>Quick Save</span>
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="quick-save-toggle" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+
+                  <div class="flex justify-between items-center">
+                    <span>Destination Directory</span>
+                    <div class="flex items-center">
+                      <button class="bg-gray-700 text-white p-2 rounded">
+                        Choose
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="fileHandler.js"></script>
+    <script>
+      // Get screen elements
+      const receiveScreen = document.getElementById("receive-screen");
+      const sendScreen = document.getElementById("send-screen");
+      const settingsScreen = document.getElementById("settings-screen");
+
+      // Get navigation buttons
+      const receiveBtn = document.getElementById("receive-btn");
+      const sendBtn = document.getElementById("send-btn");
+      const settingsBtn = document.getElementById("settings-btn");
+
+      // Get file/folder selection elements
+      const fileSelectBtn = document.getElementById("file-select-btn");
+      const folderSelectBtn = document.getElementById("folder-select-btn");
+      const clearSelectBtn = document.getElementById("clear-select-btn");
+      const selectedItemsContainer = document.getElementById("selected-items");
+
+      // Get device elements
+      const deviceCards = document.querySelectorAll(".device-card");
+
+      // Quick Save toggle
+      const quickSaveToggle = document.getElementById("quick-save-toggle");
+      const quickSaveStatus = document.querySelector(
+        "#receive-screen p.text-gray-400.mt-12"
+      );
+
+      // Function to switch screens
+      function showScreen(screen) {
+        // Hide all screens
+        receiveScreen.classList.remove("active");
+        sendScreen.classList.remove("active");
+        settingsScreen.classList.remove("active");
+
+        // Remove active class from all buttons
+        receiveBtn.classList.remove("active");
+        sendBtn.classList.remove("active");
+        settingsBtn.classList.remove("active");
+
+        // Show selected screen and activate button
+        if (screen === "receive") {
+          receiveScreen.classList.add("active");
+          receiveBtn.classList.add("active");
+        } else if (screen === "send") {
+          sendScreen.classList.add("active");
+          sendBtn.classList.add("active");
+        } else if (screen === "settings") {
+          settingsScreen.classList.add("active");
+          settingsBtn.classList.add("active");
+        }
+      }
+
+      // Add event listeners to navigation buttons
+      receiveBtn.addEventListener("click", () => showScreen("receive"));
+      sendBtn.addEventListener("click", () => showScreen("send"));
+      settingsBtn.addEventListener("click", () => showScreen("settings"));
+
+      // Quick Save toggle functionality
+      quickSaveToggle.addEventListener("change", function () {
+        quickSaveStatus.textContent = this.checked
+          ? "Quick Save: On"
+          : "Quick Save: Off";
+      });
+
+      // Add event listeners for file/folder selection
+      fileSelectBtn.addEventListener("click", function () {
+        handleFileSelection();
+        clearSelectBtn.classList.remove("hidden");
+        selectedItemsContainer.classList.remove("hidden");
+      });
+
+      folderSelectBtn.addEventListener("click", function () {
+        handleFolderSelection();
+        clearSelectBtn.classList.remove("hidden");
+        selectedItemsContainer.classList.remove("hidden");
+      });
+
+      clearSelectBtn.addEventListener("click", function () {
+        clearSelections();
+        this.classList.add("hidden");
+        selectedItemsContainer.classList.add("hidden");
+      });
+
+      // Add event listeners for device selection
+      deviceCards.forEach((card) => {
+        card.addEventListener("click", function () {
+          // Check if we have any files/folder selected
+          if (selectedFiles.files.length > 0 || selectedFiles.folder) {
+            // Clear selection from other devices
+            deviceCards.forEach((c) => c.classList.remove("selected"));
+
+            // Mark this device as selected
+            this.classList.add("selected");
+
+            // Send to the selected device
+            sendToDevice(this);
+          } else {
+            alert("Please select files or a folder to send first.");
+          }
+        });
+      });
+
+      // Initialize with Send screen
+      showScreen("send");
+    </script>
+    <script src="./renderer.js" type="module"></script>
+  </body>
+</html>
