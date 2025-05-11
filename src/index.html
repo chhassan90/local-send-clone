@@ -290,7 +290,6 @@
 
       // Get file/folder selection elements
       const fileSelectBtn = document.getElementById("file-select-btn");
-      const folderSelectBtn = document.getElementById("folder-select-btn");
       const clearSelectBtn = document.getElementById("clear-select-btn");
       const selectedItemsContainer = document.getElementById("selected-items");
 
@@ -343,12 +342,6 @@
       // Add event listeners for file/folder selection
       fileSelectBtn.addEventListener("click", function () {
         handleFileSelection();
-        clearSelectBtn.classList.remove("hidden");
-        selectedItemsContainer.classList.remove("hidden");
-      });
-
-      folderSelectBtn.addEventListener("click", function () {
-        handleFolderSelection();
         clearSelectBtn.classList.remove("hidden");
         selectedItemsContainer.classList.remove("hidden");
       });

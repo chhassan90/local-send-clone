@@ -42,14 +42,40 @@ function setupScanForDevices() {
 
 // Connect to discovery server
 async function connectToDiscoveryServer() {
-  try {
-    // Try to connect to discovery server on localhost first
-    await connectToSocket("http://localhost:3000");
+  // Get the device info first to have access to IP
+  deviceInfo = await window.electron.getDeviceInfo();
+  console.log("This device info for discovery:", deviceInfo);
 
-    // If successful, scan for devices
-    scanForDevices();
-  } catch (error) {
-    console.error("Failed to connect to discovery server:", error);
+  // Connection attempts in order of priority
+  const connectionAttempts = [
+    { url: "http://localhost:3000", name: "localhost" },
+    { url: `http://${deviceInfo.ip}:3000`, name: "device IP" },
+  ];
+
+  let connected = false;
+
+  // Try connection options in sequence
+  for (const attempt of connectionAttempts) {
+    if (connected) break;
+
+    try {
+      console.log(
+        `Attempting to connect to discovery server via ${attempt.name}: ${attempt.url}`
+      );
+      await connectToSocket(attempt.url);
+      console.log(`Successfully connected to ${attempt.url}`);
+      connected = true;
+
+      // If successful, scan for devices
+      scanForDevices();
+    } catch (error) {
+      console.error(`Failed to connect to ${attempt.name}:`, error);
+    }
+  }
+
+  // If all connection attempts failed
+  if (!connected) {
+    console.error("All connection attempts failed");
     showConnectionError();
   }
 }
@@ -59,19 +85,44 @@ async function connectToSocket(url) {
   return new Promise((resolve, reject) => {
     try {
       // Close existing connection if any
-      if (socket) {
+      if (socket && socket.connected) {
+        console.log("Disconnecting existing socket connection");
         socket.disconnect();
       }
 
+      // Setup connection options with timeout and reconnection
+      const options = {
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        timeout: 5000,
+        autoConnect: true,
+        transports: ["websocket", "polling"], // Try both transport methods
+      };
+
       // Connect to server
-      socket = io(url);
+      console.log(`Attempting to connect to: ${url}`);
+      socket = io(url, options);
+
+      // Set timeout for connection attempt
+      const connectionTimeout = setTimeout(() => {
+        console.error("Connection attempt timed out");
+        socket.disconnect();
+        reject(new Error("Connection timeout"));
+      }, 7000);
 
       // Handle connection events
       socket.on("connect", () => {
         console.log("Connected to discovery server");
+        clearTimeout(connectionTimeout);
 
         // Send this device's info
-        socket.emit("broadcast-device", deviceInfo);
+        if (deviceInfo) {
+          console.log("Broadcasting device info:", deviceInfo);
+          socket.emit("broadcast-device", deviceInfo);
+        } else {
+          console.warn("No device info available to broadcast");
+        }
 
         resolve();
       });
@@ -80,8 +131,13 @@ async function connectToSocket(url) {
       socket.on("device-discovered", (device) => {
         console.log("Device discovered:", device);
 
-        // Skip if it's this device
-        if (device.id === deviceInfo.id) return;
+        // Skip if it's this device or if device has no ID
+        if (
+          !device ||
+          !device.id ||
+          (deviceInfo && device.id === deviceInfo.id)
+        )
+          return;
 
         // Add to discovered devices
         discoveredDevices.set(device.id, device);
@@ -93,8 +149,12 @@ async function connectToSocket(url) {
       // Handle server info about this device
       socket.on("device-info", (info) => {
         console.log("Device info received:", info);
-        deviceInfo = info;
-        updateDeviceNameUI(info.name);
+        if (info && info.id) {
+          deviceInfo = info;
+          updateDeviceNameUI(info.name);
+        } else {
+          console.warn("Received invalid device info:", info);
+        }
       });
 
       // Handle disconnection
@@ -143,7 +203,12 @@ function showConnectionError() {
 
 // Scan for devices on the network
 function scanForDevices() {
-  // Clear existing device list
+  console.log("Starting device scan...");
+
+  // Clear existing device list first
+  discoveredDevices.clear();
+
+  // Update UI to show scanning status
   const deviceList = document.getElementById("device-list");
   if (deviceList) {
     deviceList.innerHTML = `
@@ -153,28 +218,43 @@ function scanForDevices() {
     `;
   }
 
-  // Broadcast this device to the network
-  if (socket && socket.connected) {
-    socket.emit("broadcast-device", deviceInfo);
+  // Check socket connection
+  if (!socket) {
+    console.error("No socket connection available for scanning");
+    showConnectionError();
+    return;
   }
 
+  if (!socket.connected) {
+    console.warn("Socket is not connected. Attempting to reconnect...");
+    socket.connect();
+  }
+
+  // Broadcast this device to the network
+  console.log("Broadcasting device for discovery:", deviceInfo);
+  socket.emit("broadcast-device", deviceInfo);
   // If no devices found after 5 seconds, show message
   setTimeout(() => {
+    console.log(
+      `Scan timeout reached. Devices found: ${discoveredDevices.size}`
+    );
     if (discoveredDevices.size === 0) {
       if (deviceList) {
         deviceList.innerHTML = `
           <div class="p-4 text-center">
             <p class="text-gray-400">No devices found</p>
-            <button id="rescan-btn" class="mt-2 px-4 py-2 rounded-lg bg-teal-600 text-white">
+            <button id="retry-scan-btn" class="mt-2 px-4 py-2 rounded-lg bg-teal-600 text-white">
               Scan Again
             </button>
           </div>
         `;
 
-        // Add rescan button functionality
-        document.getElementById("rescan-btn").addEventListener("click", () => {
-          scanForDevices();
-        });
+        // Add retry scan button functionality
+        document
+          .getElementById("retry-scan-btn")
+          .addEventListener("click", () => {
+            scanForDevices();
+          });
       }
     }
   }, 5000);

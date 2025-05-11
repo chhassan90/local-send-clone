@@ -1,13 +1,12 @@
 import { app, BrowserWindow, ipcMain, dialog } from "electron";
-import path from "node:path";
-// import os from "os";
+import path from "path";
 import fs from "fs";
-import http from "http";
 import { Server } from "socket.io";
-import { networkInterfaces } from "os";
 import electronSquirrelStartup from "electron-squirrel-startup";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
+import { createServer } from "http";
+import { getLocalIpAddress } from "./helpers.js";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (electronSquirrelStartup) {
@@ -18,61 +17,76 @@ if (electronSquirrelStartup) {
 let mainWindow;
 let io;
 let httpServer;
+// Define IP and port variables for consistency
 let discoveryPort = 3000;
+let serverIp = "0.0.0.0"; // Listen on all network interfaces
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Function to get local IP address
-function getLocalIpAddress() {
-  const interfaces = networkInterfaces();
-  for (const name of Object.keys(interfaces)) {
-    for (const iface of interfaces[name]) {
-      // Skip internal and non-ipv4 addresses
-      if (!iface.internal && iface.family === "IPv4") {
-        return iface.address;
-      }
-    }
-  }
-  return "127.0.0.1"; // Fallback to localhost
-}
-
-// Setup WebSocket server for device discovery
 function setupDiscoveryServer() {
-  httpServer = http.createServer();
+  // Create HTTP server first
+  httpServer = createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("File Transfer Discovery Server");
+  });
+
+  // Initialize Socket.IO server with CORS
   io = new Server(httpServer, {
     cors: {
       origin: "*",
       methods: ["GET", "POST"],
     },
+    // Add reliability options
+    pingTimeout: 10000,
+    pingInterval: 5000,
   });
-
   io.on("connection", (socket) => {
     console.log("New device connected:", socket.id);
 
-    // Send this device's info to the new connection
+    // Create a custom identifier for the device that includes socket ID
+    const socketDeviceId = `${socket.id}-${Date.now()}`;
+
+    // Send this device's info to the newly connected device
     socket.emit("device-info", {
       id: app.deviceId,
       name: app.deviceName,
       ip: getLocalIpAddress(),
+      socketId: socket.id,
     });
 
-    // Broadcast to all clients when a new device connects
+    // Broadcast to all other clients that this device is available
     socket.broadcast.emit("device-discovered", {
       id: app.deviceId,
       name: app.deviceName,
       ip: getLocalIpAddress(),
+      socketId: socket.id,
     });
 
-    // When a device broadcasts itself
     socket.on("broadcast-device", (deviceInfo) => {
-      console.log("Device broadcasting:", deviceInfo);
-      // Forward the broadcast to the renderer process
-      if (mainWindow) {
-        mainWindow.webContents.send("device-discovered", deviceInfo);
+      console.log("Device broadcasted:", deviceInfo);
+
+      // Validate the data before processing
+      if (!deviceInfo || !deviceInfo.id) {
+        console.warn("Received invalid device broadcast data:", deviceInfo);
+        return;
       }
+
+      // Enhance device info with socket information
+      const enhancedDeviceInfo = {
+        ...deviceInfo,
+        socketId: socket.id,
+        lastSeen: Date.now(),
+      };
+
+      // Forward device info to the renderer process
+      if (mainWindow) {
+        mainWindow.webContents.send("device-discovered", enhancedDeviceInfo);
+      }
+
+      // Also broadcast to all other connected sockets
+      socket.broadcast.emit("device-discovered", enhancedDeviceInfo);
     });
 
-    // Handle file transfer request
     socket.on("file-transfer-request", (request) => {
       if (mainWindow) {
         mainWindow.webContents.send("file-transfer-request", {
@@ -82,28 +96,36 @@ function setupDiscoveryServer() {
       }
     });
 
-    // Handle file transfer response
     socket.on("file-transfer-response", (response) => {
       io.to(response.to).emit("file-transfer-response", response);
     });
 
-    // Handle disconnection
     socket.on("disconnect", () => {
       console.log("Device disconnected:", socket.id);
       if (mainWindow) {
         mainWindow.webContents.send("device-disconnected", socket.id);
       }
     });
-  });
-
-  // Start listening
-  httpServer.listen(discoveryPort, () => {
-    console.log(`Discovery server running on port ${discoveryPort}`);
-  });
+  }); // Start HTTP server on the specified IP and port
+  try {
+    httpServer.listen(discoveryPort, serverIp, () => {
+      const localIp = getLocalIpAddress();
+      console.log(`Discovery server running on port ${discoveryPort}`);
+      console.log(`Server IP: ${localIp}:${discoveryPort}`);
+      console.log(`Device ID: ${app.deviceId}, Name: ${app.deviceName}`);
+    });
+  } catch (error) {
+    console.error("Failed to start discovery server:", error);
+    // Try fallback to localhost if binding to all interfaces fails
+    httpServer.listen(discoveryPort, "127.0.0.1", () => {
+      console.log(
+        `Discovery server running on localhost:${discoveryPort} (fallback mode)`
+      );
+    });
+  }
 }
 
 const createWindow = () => {
-  // Generate a unique device ID and name if not already set
   if (!app.deviceId) {
     app.deviceId = Math.random().toString(36).substring(2, 10);
     app.deviceName = `User-${app.deviceId.substring(0, 4)}`;
@@ -130,22 +152,16 @@ const createWindow = () => {
   }
 };
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   createWindow();
   setupDiscoveryServer();
 
-  // On OS X it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
 
-  // Setup file dialog handler
   ipcMain.handle("show-file-dialog", async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({
       properties: ["openFile", "multiSelections"],

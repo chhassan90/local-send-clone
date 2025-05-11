@@ -15,10 +15,33 @@ const folderSelectBtn = document.getElementById("folder-select-btn");
 
 // Initialize the application
 function initializeApp() {
-  // Initialize device discovery
-  discovery.initializeDiscovery().catch((err) => {
-    console.error("Failed to initialize discovery:", err);
-  });
+  console.log("Initializing application...");
+
+  // Display app status
+  const statusDiv = document.createElement("div");
+  statusDiv.id = "app-status";
+  statusDiv.className =
+    "fixed bottom-2 right-2 p-2 bg-gray-800 text-xs text-gray-300 rounded";
+  statusDiv.textContent = "Initializing...";
+  document.body.appendChild(statusDiv);
+
+  // Initialize device discovery with enhanced error handling
+  discovery
+    .initializeDiscovery()
+    .then(() => {
+      console.log("Discovery initialized successfully");
+      statusDiv.textContent = "Discovery service ready";
+      setTimeout(() => {
+        statusDiv.style.opacity = "0";
+        setTimeout(() => statusDiv.remove(), 1000);
+      }, 3000);
+    })
+    .catch((err) => {
+      console.error("Failed to initialize discovery:", err);
+      statusDiv.textContent = "Discovery initialization failed";
+      statusDiv.className =
+        "fixed bottom-2 right-2 p-2 bg-red-800 text-xs text-white rounded";
+    });
 
   // Initialize peer-to-peer functionality
   p2p.initializePeer();
