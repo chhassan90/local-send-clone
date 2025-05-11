@@ -578,7 +578,7 @@ function formatFileSize(bytes) {
 }
 
 // Export functions
-module.exports = {
+exports = {
   initializePeer,
   updateDeviceList,
   sendToDevice,
