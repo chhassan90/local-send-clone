@@ -1,7 +1,6 @@
-// renderer.js - Main renderer process script
-const discovery = require("./discovery");
-const p2p = require("./p2p");
-const fileHandler = require("./fileHandler");
+import discovery from "./discovery";
+import p2p from "./p2p";
+import fileHandler from "./fileHandler";
 
 // DOM elements
 const receiveBtn = document.getElementById("receive-btn");

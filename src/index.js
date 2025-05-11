@@ -1,13 +1,16 @@
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
-const path = require("node:path");
-const os = require("os");
-const fs = require("fs");
-const http = require("http");
-const { Server } = require("socket.io");
-const { networkInterfaces } = require("os");
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import path from "node:path";
+// import os from "os";
+import fs from "fs";
+import http from "http";
+import { Server } from "socket.io";
+import { networkInterfaces } from "os";
+import electronSquirrelStartup from "electron-squirrel-startup";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require("electron-squirrel-startup")) {
+if (electronSquirrelStartup) {
   app.quit();
 }
 
@@ -16,6 +19,8 @@ let mainWindow;
 let io;
 let httpServer;
 let discoveryPort = 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Function to get local IP address
 function getLocalIpAddress() {

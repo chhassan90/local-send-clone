@@ -1,5 +1,5 @@
 // p2p.js - WebRTC peer-to-peer functionality with SimplePeer
-const Peer = require("simple-peer");
+import Peer from "simple-peer";
 
 // Store for active peer connections
 const activeConnections = new Map();

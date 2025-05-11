@@ -1,0 +1,53 @@
+<div id="settings-screen" class="screen h-full">
+  <div class="p-8 h-full">
+    <h2 class="text-3xl font-semibold mb-6">Settings</h2>
+
+    <div class="space-y-8">
+      <!-- Device Section -->
+      <div>
+        <h3 class="text-xl mb-4">Device</h3>
+
+        <div class="bg-gray-800 rounded-lg p-4 space-y-4">
+          <div class="flex justify-between items-center">
+            <span>Device Name</span>
+            <div class="flex items-center">
+              <input
+                id="device-name-input"
+                type="text"
+                class="bg-gray-700 text-white p-2 rounded mr-2"
+              />
+              <button
+                id="save-name-btn"
+                class="bg-teal-600 text-white p-2 rounded"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Receiving Section -->
+      <div>
+        <h3 class="text-xl mb-4">Receiving</h3>
+
+        <div class="bg-gray-800 rounded-lg p-4 space-y-4">
+          <div class="flex justify-between items-center">
+            <span>Quick Save</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="quick-save-toggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="flex justify-between items-center">
+            <span>Destination Directory</span>
+            <div class="flex items-center">
+              <button class="bg-gray-700 text-white p-2 rounded">Choose</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

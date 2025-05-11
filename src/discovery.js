@@ -1,5 +1,5 @@
 // discovery.js - Device discovery functionality for local network
-const io = require("socket.io-client");
+import io from "socket.io-client";
 
 // Store for discovered devices
 const discoveredDevices = new Map();
